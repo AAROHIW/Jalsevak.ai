@@ -3,45 +3,88 @@ import { supabase } from '@/lib/supabase';
 import { calculateVibeScore } from '@/lib/hydra-logic';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Initialize the Brain with your Vercel Environment Variable
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // 1. Get the data + the USER'S INTENT from Postman
-    const { ph_level, turbidity, metal_concentration, location, intent } = body;
+    // 1. Destructure all fields from Postman/Hardware
+    const { 
+      ph_level, 
+      turbidity, 
+      metal_concentration, 
+      location, 
+      intent, 
+      conductivity, 
+      machine_id 
+    } = body;
 
-    // 2. Calculate HMPI
-    const vibe = calculateVibeScore(metal_concentration || 0, ph_level || 7, turbidity || 0);
+    // 2. Calculate the HMPI Score using your hydra-logic
+    const vibe = calculateVibeScore(
+      metal_concentration || 0, 
+      ph_level || 7, 
+      turbidity || 0
+    );
 
-    // 3. The AI Consultant Logic
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const aiPrompt = `
-      Location: ${location || 'Pune River'}. 
-      HMPI Score: ${vibe.score} (Status: ${vibe.status}). 
-      User Intent: ${intent || 'General observation'}.
-      Based on the HMPI score, give a 2-sentence expert recommendation on whether the user can proceed with their intent and what the specific risk is.
-    `;
+    // 3. The AI Consultant Layer (Gemini 3.5 Flash)
+    let aiAdvice = "Consultant is currently analyzing the environmental impact...";
+    
+    try {
+      // Using the latest 3.5 Flash model for 2026 performance
+      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+      
+      const aiPrompt = `
+        You are the Jalsevak AI Water Consultant. 
+        Analyze this Pune water data:
+        - Location: ${location || 'Unknown'}
+        - HMPI: ${vibe.score}
+        - Status: ${vibe.status}
+        - User Intent: ${intent || 'General Safety Check'}
 
-    const result = await model.generateContent(aiPrompt);
-    const aiAdvice = result.response.text();
+        Provide a 2-sentence professional assessment. Mention if they can proceed with their intent and one specific scientific risk.
+      `;
 
-    // 4. Save to Supabase (so Arnav's UI still works)
-    await supabase.from('water_samples').insert([{ 
-      ph_level, turbidity, metal_concentration, 
-      location, hmpi_score: vibe.score, status: vibe.status 
-    }]);
+      const result = await model.generateContent(aiPrompt);
+      aiAdvice = result.response.text();
+    } catch (aiError) {
+      console.error("AI Generation Failed:", aiError);
+      aiAdvice = "The AI Consultant is temporarily recalibrating, but your HMPI data is live.";
+    }
 
-    // 5. The BIG Response to Postman
+    // 4. Save to Supabase (Syncs with Arnav's UI)
+    const { error: dbError } = await supabase
+      .from('water_samples')
+      .insert([
+        { 
+          ph_level, 
+          turbidity, 
+          metal_concentration, 
+          conductivity: conductivity || 0,
+          location: location || "Pune Main Stream",
+          machine_id: machine_id || "SV-PROTOTYPE",
+          hmpi_score: vibe.score,
+          status: vibe.status 
+        }
+      ]);
+
+    if (dbError) throw dbError;
+
+    // 5. The "Full Stack" Response for the Judges
     return NextResponse.json({ 
       success: true, 
       hmpi: vibe.score,
       status: vibe.status,
-      ai_consultant: aiAdvice // This is what the judge will see!
+      ai_consultant: aiAdvice.trim(),
+      timestamp: new Date().toISOString()
     }, { status: 201 });
 
   } catch (err: any) {
-    return NextResponse.json({ error: "System Error", details: err.message }, { status: 500 });
+    console.error("Gatekeeper Critical Error:", err.message);
+    return NextResponse.json({ 
+      error: "Vibe Check Failed", 
+      details: err.message 
+    }, { status: 500 });
   }
 }
