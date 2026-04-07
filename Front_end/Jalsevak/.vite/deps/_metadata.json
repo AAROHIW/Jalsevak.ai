@@ -1,0 +1,49 @@
+{
+  "hash": "5f6df2e4",
+  "configHash": "7abfb33d",
+  "lockfileHash": "347bcc2a",
+  "browserHash": "2c59b32a",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "0389d278",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "119a5017",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "d16568a1",
+      "needsInterop": false
+    },
+    "web-vitals": {
+      "src": "../../node_modules/web-vitals/dist/web-vitals.js",
+      "file": "web-vitals.js",
+      "fileHash": "970fd62c",
+      "needsInterop": false
+    },
+    "prop-types": {
+      "src": "../../node_modules/prop-types/index.js",
+      "file": "prop-types.js",
+      "fileHash": "b2fa0295",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-PCGSG3X4": {
+      "file": "chunk-PCGSG3X4.js"
+    },
+    "chunk-QYXY6RWP": {
+      "file": "chunk-QYXY6RWP.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}
