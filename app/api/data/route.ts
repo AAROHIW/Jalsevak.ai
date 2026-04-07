@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
     // 3. The Database: Insert the processed data into Supabase
     const { data, error } = await supabase
-      .from('water_data')
+      .from('water_samples')
       .insert([
         { 
           ph_level: ph, 
